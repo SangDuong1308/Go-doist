@@ -1,7 +1,9 @@
 use todo_list;
 
+drop table todo_items 
+
 CREATE TABLE todo_items (
-    id VARCHAR(50) NOT NULL,
+    id INT AUTO_INCREMENT NOT NULL,
     title VARCHAR(255) NOT NULL,
     image JSON,
     description TEXT,
