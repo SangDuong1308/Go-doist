@@ -13,6 +13,9 @@ CREATE TABLE todo_items (
     PRIMARY KEY (id)
 );
 
+select * from todo_items
+select * from todo_user_like_items tuli 
+
 INSERT INTO todo_items (id, title, image, description, status, created_at, updated_at) 
 VALUES 
 ('1', 'Buy groceries', NULL, 'Buy milk, eggs, and bread', 'doing', '2024-06-03 10:00:00', '2024-06-03 10:00:00'),

@@ -1,106 +1,55 @@
 package main
 
 import (
+	"github.com/gin-gonic/contrib/cors"
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 	"log"
 	"net/http"
-	"os"
-	"time"
+	"social-todo-list/Services"
+	"social-todo-list/database"
+	"social-todo-list/models"
 )
 
-type TodoItem struct {
-	Id          int        `json:"id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Status      string     `json:"status"`
-	CreateAt    *time.Time `json:"create_at"`
-	UpdateAt    *time.Time `json:"update_at,omitempty"`
-}
-
-type TodoItemCreate struct {
-	Id          int    `json:"-" gorm:"column:id;"`
-	Title       string `json:"title" gorm:"column:title;"`
-	Description string `json:"description" gorm:"column:description"`
-	//Status      string `json:"status" gorm:"column:status"`
-}
-
-func (TodoItemCreate) TableName() string {
-	return "todo_items"
+func indexView(c *gin.Context) {
+	c.Header("Access-Control-Allow-Origin", "*")
+	c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
+	c.JSON(http.StatusOK, gin.H{"message": "TODO APP"})
 }
 
 func main() {
-	dsn := os.Getenv("DB_CONN_STRING")
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := database.ConnectToDB()
 
 	if err != nil {
 		log.Fatalln(err)
 	}
-	//jsonData, err := json.Marshal(item)
-	//
-	//if err != nil {
-	//	fmt.Println("error:", err)
-	//	return
-	//}
-	//fmt.Println(string(jsonData))
-	//
-	//jsonStr := "{\"id\":1,\"title\":\"First Item\",\"description\":\"The first one\",\"status\":\"Doing\",\"create_at\":\"2024-06-03T15:56:49.354384Z\",\"update_at\":null}"
-	//var item2 TodoItem
-	//
-	//if err := json.Unmarshal([]byte(jsonStr), &item2); err != nil {
-	//	fmt.Println("error:", err)
-	//	return
-	//}
-	//fmt.Println(item2)
+
+	// migration
+	err = db.AutoMigrate(&models.User{})
+	if err != nil {
+		return
+	}
 
 	r := gin.Default()
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	r.Use(cors.New(config))
 
 	v1 := r.Group("/api/v1")
 	{
+		v1.GET("/", indexView)
 		items := v1.Group("/items")
 		{
-			items.POST("", CreateItem(db))
-			items.GET("")
-			items.GET("/:id", GetItemById(db))
-			items.PATCH("/:id")
-			items.DELETE("/:id")
+			items.POST("", Services.CreateItem(db))
+			items.GET("", Services.GetAllItems(db))
+			items.GET("/:id", Services.GetItemById(db))
+			items.PATCH("/:id", Services.UpdateById(db))
+			items.DELETE("/:id", Services.DeleteById(db))
+		}
+		auths := v1.Group("/auth")
+		{
+			auths.POST("/register", Services.Register(db))
 		}
 	}
 
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": item,
-		})
-	})
-	r.Run(":3000")
-}
-
-func CreateItem(db *gorm.DB) func(*gin.Context) {
-	return func(c *gin.Context) {
-		var data TodoItemCreate
-		if err := c.ShouldBind(&data); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
-		if err := db.Create(&data).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"data": data.Id,
-		})
-	}
-}
-
-func GetItems(db *gorm.DB) func(*gin.Context) {
-	return func(c *gin.Context) {
-
-	}
+	r.Run(":5000")
 }
