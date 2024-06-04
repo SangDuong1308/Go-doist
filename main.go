@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/gin-gonic/contrib/cors"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -17,6 +17,15 @@ func indexView(c *gin.Context) {
 }
 
 func main() {
+	r := gin.Default()
+	// CORS configuration
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://localhost:3000"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
+	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
+
+	r.Use(cors.New(config))
+
 	db, err := database.ConnectToDB()
 
 	if err != nil {
@@ -29,10 +38,10 @@ func main() {
 		return
 	}
 
-	r := gin.Default()
-	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
-	r.Use(cors.New(config))
+	//r := gin.Default()
+	//config := cors.DefaultConfig()
+	//config.AllowAllOrigins = true
+	//r.Use(cors.New(config))
 
 	v1 := r.Group("/api/v1")
 	{

@@ -1,6 +1,7 @@
+create database todo_list;
 use todo_list;
 
-drop table todo_items 
+-- drop table todo_items 
 
 CREATE TABLE todo_items (
     id INT AUTO_INCREMENT NOT NULL,

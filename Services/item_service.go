@@ -8,29 +8,35 @@ import (
 	"social-todo-list/dtos"
 	"social-todo-list/models"
 	"strconv"
+	"strings"
 )
 
 func CreateItem(db *gorm.DB) func(*gin.Context) {
 	return func(c *gin.Context) {
-		var data dtos.TodoItemCreate
-		if err := c.ShouldBind(&data); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
+		var dataItem dtos.TodoItemCreate
+
+		if err := c.ShouldBind(&dataItem); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		if err := db.Create(&data).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
+		// preprocess title - trim all spaces
+		dataItem.Title = strings.TrimSpace(dataItem.Title)
+
+		if dataItem.Title == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "title cannot be blank"})
+			return
+		}
+
+		if err := db.Create(&dataItem).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
 		c.JSON(http.StatusOK, gin.H{
-			"item_id": data.Id,
+			"item_id": dataItem.Id,
 		})
 	}
 }
@@ -158,6 +164,6 @@ func UpdateById(db *gorm.DB) func(*gin.Context) {
 
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
-		c.JSON(http.StatusOK, gin.H{"data": true})
+		c.JSON(http.StatusOK, gin.H{"New data": dataItem})
 	}
 }
